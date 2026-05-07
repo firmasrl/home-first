@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Home First">
+<link rel="apple-touch-icon" id="app-icon" href="data:,">
+<link rel="icon" id="fav-icon" type="image/png" href="data:,">
+<meta name="theme-color" content="#1B4965">
+<script>
+(function(){
+  function makeIcon(size){
+    var c=document.createElement('canvas');c.width=size;c.height=size;
+    var x=c.getContext('2d'),r=size*0.2;
+    // Rounded rect background
+    x.beginPath();x.moveTo(r,0);x.lineTo(size-r,0);x.quadraticCurveTo(size,0,size,r);
+    x.lineTo(size,size-r);x.quadraticCurveTo(size,size,size-r,size);
+    x.lineTo(r,size);x.quadraticCurveTo(0,size,0,size-r);
+    x.lineTo(0,r);x.quadraticCurveTo(0,0,r,0);x.closePath();
+    x.fillStyle='#1B4965';x.fill();
+    // Subtle circle accent
+    x.beginPath();x.arc(size/2,size*0.42,size*0.22,0,Math.PI*2);
+    x.strokeStyle='rgba(95,168,211,0.35)';x.lineWidth=size*0.016;x.stroke();
+    // "HF" text
+    x.fillStyle='#FFFFFF';x.font='800 '+Math.round(size*0.38)+'px -apple-system,Arial,sans-serif';
+    x.textAlign='center';x.textBaseline='middle';x.fillText('HF',size/2,size*0.48);
+    // "Home First" subtext
+    x.fillStyle='#CAE9FF';x.font='600 '+Math.round(size*0.083)+'px -apple-system,Arial,sans-serif';
+    x.fillText('Home First',size/2,size*0.76);
+    return c.toDataURL('image/png');
+  }
+  var png192=makeIcon(192),png512=makeIcon(512);
+  // Set apple-touch-icon and favicon
+  document.getElementById('app-icon').href=png192;
+  document.getElementById('fav-icon').href=png192;
+  // Create and inject manifest with embedded PNG icons
+  var manifest={name:'Home First Carer App',short_name:'Home First',display:'standalone',
+    start_url:'.',background_color:'#F1F5F9',theme_color:'#1B4965',
+    icons:[{src:png192,sizes:'192x192',type:'image/png'},{src:png512,sizes:'512x512',type:'image/png'}]};
+  var blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  var link=document.createElement('link');link.rel='manifest';link.href=URL.createObjectURL(blob);
+  document.head.appendChild(link);
+})();
+</script>
+<title>Home First</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:#F1F5F9;overscroll-behavior:none;color:#1E293B}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,textarea{font-family:inherit;outline:none}
+.screen{min-height:100vh;min-height:100dvh}
+.hide{display:none!important}
+
+/* Global Card Style - Made Smaller */
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+
+/* Login */
+.login-bg{background:linear-gradient(160deg,#1B4965 0%,#0D2B3E 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+.login-card{width:100%;max-width:340px;background:#fff;border-radius:20px;padding:28px 24px;box-shadow:0 16px 40px rgba(0,0,0,.3);margin-bottom:0}
+.hf-circle{width:70px;height:70px;border-radius:50%;border:3px solid #5FA8D3;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;background:#F8F9FA}
+.hf-text{font-weight:900;font-size:24px;color:#1B4965;letter-spacing:1px}
+.login-title{font-weight:800;font-size:20px;color:#1E293B;text-align:center;margin-bottom:24px}
+.login-input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #E2E8F0;font-size:15px;margin-bottom:12px;background:#F8FAFC}
+.btn-mfa{width:100%;padding:14px;border-radius:10px;background:#2962FF;color:#fff;font-size:15px;font-weight:700;margin-top:4px}
+.btn-verify{width:100%;padding:14px;border-radius:10px;background:#5FA8D3;color:#fff;font-size:15px;font-weight:700}
+.mfa-input{width:100%;padding:14px;border-radius:10px;border:2px solid #5FA8D3;font-size:24px;text-align:center;letter-spacing:10px;margin-bottom:16px;font-family:monospace;background:#F8FAFC}
+.login-sub{text-align:center;margin-top:14px;font-size:11px;color:#64748B}
+.btn-dash-link{margin-top:16px;padding:10px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#CAE9FF;font-size:12px}
+.login-err{color:#E07A5F;font-size:12px;text-align:center;margin-bottom:12px}
+.btn-back-text{width:100%;padding:10px;background:transparent;color:#64748B;font-size:13px;font-weight:600;margin-top:8px}
+
+/* Schedule */
+.sched-header{padding:20px 16px 10px}
+.sched-title{font-weight:800;font-size:22px;color:#1E293B;margin-bottom:2px}
+.sched-sub{font-size:13px;color:#64748B;font-weight:500}
+.sched-list{padding:10px 16px 90px}
+.visit-card{width:100%;background:#fff;border:none;border-radius:12px;padding:14px 16px;margin-bottom:10px;text-align:left;box-shadow:0 2px 8px rgba(0,0,0,0.04);position:relative;overflow:hidden}
+.visit-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:#CBD5E1}
+.visit-card.completed::before{background:#2D6A4F}
+.visit-card.current::before{background:#5FA8D3}
+.visit-card.reassigned::before{background:#7B1FA2}
+.visit-card.completed{background:#F6FBF7}
+.visit-card.current{background:#F0F7FF}
+.visit-card.reassigned{background:#FAF5FB;opacity:0.8}
+
+.visit-time{font-size:12px;font-weight:700;color:#64748B}
+.visit-time.completed{color:#155724}
+.visit-time.current{color:#1565C0}
+.visit-time.reassigned{color:#7B1FA2}
+.visit-name{font-weight:800;font-size:17px;color:#1E293B;margin-top:4px}
+.visit-addr{font-size:13px;color:#64748B;margin-top:4px}
+.nfc-badge{font-size:10px;background:#D4EDDA;color:#155724;padding:3px 8px;border-radius:10px;font-weight:700;white-space:nowrap}
+.reassigned-badge{font-size:10px;background:#F3E5F5;color:#7B1FA2;padding:3px 8px;border-radius:10px;font-weight:700;white-space:nowrap;border:1px solid #CE93D8}
+.nav-btn{margin-top:10px;display:inline-block;border:1.5px solid #1B4965;color:#1B4965;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;background:#fff}
+.sched-footer{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-top:1px solid #E2E8F0;padding:10px 16px;display:flex;justify-content:center;gap:10px}
+.btn-signout{background:#F1F5F9;border:none;color:#64748B;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600}
+
+/* Visit Screen */
+#screen-visit{padding:12px;padding-bottom:120px;overflow-y:auto}
+.visit-header-card{display:flex;align-items:center;justify-content:space-between;padding:12px}
+.btn-back{background:none;font-size:22px;padding:4px 8px;color:#1E293B;margin-right:6px;border-radius:8px}
+.patient-pic{width:44px;height:44px;border-radius:50%;margin-right:12px;object-fit:cover;border:2px solid #5FA8D3;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+.visit-patient{font-weight:800;font-size:19px;color:#1E293B;line-height:1.2}
+.nfc-verified{background:#D4EDDA;color:#155724;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid #A5D6A7}
+
+.info-card{background:#E3F2FD;border:1px solid #BBDEFB;padding:12px 14px;font-size:12px;color:#0D47A1;font-weight:600}
+.prev-notes-card{background:#FFF8E1;border:1px solid #FFECB3;padding:14px}
+.prev-notes-title{font-size:12px;font-weight:800;color:#E65100;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.prev-notes-text{font-size:13px;color:#1E293B;line-height:1.4}
+.prev-notes-meta{font-size:11px;color:#8D6E63;margin-top:6px;font-weight:500}
+
+.tasks-title{font-weight:800;font-size:15px;color:#1E293B;margin-bottom:12px}
+.task-row{width:100%;display:flex;align-items:center;gap:12px;padding:12px 0;background:none;text-align:left;border-bottom:1px solid #F1F5F9}
+.task-row:last-child{border-bottom:none;padding-bottom:0}
+.task-row:first-child{padding-top:0}
+.task-check{width:24px;height:24px;border-radius:6px;border:2px solid #CBD5E1;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:800;color:#fff;transition:all 0.2s}
+.task-check.done{background:#2D6A4F;border-color:#2D6A4F}
+.task-check.disabled{background:#F1F5F9;border-color:#E2E8F0;color:#CBD5E1}
+.task-text{font-size:14px;color:#334155;font-weight:500}
+.task-text.disabled{color:#94A3B8}
+
+.notes-area{width:100%;padding:12px;border-radius:10px;border:1px solid #E2E8F0;font-size:14px;resize:vertical;background:#F8FAFC;min-height:80px}
+.notes-area:focus{border-color:#5FA8D3;background:#fff}
+
+.action-card{background:transparent;box-shadow:none;padding:0;margin-top:8px}
+.btn-nfc{width:100%;padding:16px;border-radius:12px;background:#E07A5F;color:#fff;font-size:15px;font-weight:700;margin-bottom:10px;box-shadow:0 4px 10px rgba(224,122,95,0.3)}
+.btn-complete{width:100%;padding:16px;border-radius:12px;background:#2D6A4F;color:#fff;font-size:15px;font-weight:700;margin-bottom:10px;box-shadow:0 4px 10px rgba(45,106,79,0.3)}
+.btn-scanning{background:#64748B !important;box-shadow:none !important}
+.btn-disabled{background:#E2E8F0 !important;color:#94A3B8 !important;box-shadow:none !important;cursor:not-allowed;pointer-events:none}
+
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-voice{padding:14px;border-radius:10px;background:#1B4965;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(27,73,101,0.2)}
+.btn-flag{padding:14px;border-radius:10px;background:#fff;color:#1E293B;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;border:2px solid #E2E8F0}
+.btn-flag.active{background:#FFF0ED;color:#E07A5F;border-color:#E07A5F}
+
+/* Modals */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px}
+.modal-card{background:#fff;border-radius:20px;padding:28px;max-width:320px;width:100%;text-align:center;box-shadow:0 16px 32px rgba(0,0,0,0.2)}
+.modal-icon{width:56px;height:56px;border-radius:50%;background:#D4EDDA;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;color:#2D6A4F}
+.modal-title{font-weight:800;font-size:20px;color:#1E293B;margin-bottom:8px}
+.modal-sub{font-size:14px;color:#64748B;margin-bottom:20px;line-height:1.4}
+.btn-modal{width:100%;padding:14px;border-radius:10px;background:#1B4965;color:#fff;font-size:15px;font-weight:700}
+
+/* Dashboard */
+.dash-header{background:#1B4965;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.dash-title{color:#fff;font-weight:800;font-size:17px;margin-bottom:2px}
+.dash-date{color:#CAE9FF;font-size:12px;font-weight:500}
+.btn-carer{background:rgba(255,255,255,.15);color:#fff;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600}
+.dash-body{padding:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-label{font-size:11px;color:#64748B;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.kpi-val{font-size:26px;font-weight:800;color:#1E293B}
+.kpi-sub{font-size:11px;font-weight:600;margin-top:2px}
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.panel-title{font-weight:800;font-size:15px;color:#1E293B;margin-bottom:12px}
+.alert-item{padding:10px 14px;border-radius:10px;margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.02)}
+.alert-head{font-size:12px;font-weight:800;margin-bottom:2px}
+.alert-msg{font-size:12px;color:#334155;line-height:1.4}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:10px 6px;text-align:left;font-weight:800;color:#64748B;font-size:11px;border-bottom:2px solid #E2E8F0;text-transform:uppercase}
+td{padding:10px 6px;border-bottom:1px solid #F1F5F9;font-weight:500;color:#334155}
+.st-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;display:inline-block}
+
+.btn-emergency{background:#E07A5F;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:700;margin-right:10px;box-shadow:0 2px 8px rgba(224,122,95,0.3)}
+.btn-emergency.triggered{background:#64748B;box-shadow:none}
+.emergency-option{width:100%;padding:14px;margin-bottom:8px;border-radius:10px;border:2px solid #E2E8F0;background:#fff;font-size:15px;font-weight:600;color:#1E293B;cursor:pointer;text-align:left;transition:all 0.2s}
+.emergency-option:active{background:#F0F7FF;border-color:#5FA8D3}
+.emergency-modal{position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px}
+.emergency-confirm{background:#F6FBF7;border-radius:12px;padding:16px;margin-top:10px;border:1px solid #A5D6A7}
+</style>
+</head>
+<body>
+
+<div id="screen-login" class="screen login-bg">
+  <div class="card login-card">
+    <div style="text-align:center">
+      <div class="hf-circle"><span class="hf-text">HF</span></div>
+      <div class="login-title">Home First</div>
+    </div>
+    <div id="login-form">
+      <input id="staff-id" class="login-input" placeholder="Staff ID">
+      <input id="password" class="login-input" type="password" placeholder="Password">
+      <div id="login-err" class="login-err hide"></div>
+      <button class="btn-mfa" onclick="handleLogin()">Sign in with MFA</button>
+      <div class="login-sub">Azure AD + Microsoft Authenticator</div>
+    </div>
+    <div id="mfa-form" class="hide">
+      <div style="text-align:center;margin-bottom:14px;font-size:14px;color:#1E293B;font-weight:500">Enter the code from Microsoft Authenticator</div>
+      <input id="mfa-code" class="mfa-input" placeholder="000000" maxlength="6" inputmode="numeric">
+      <div id="mfa-err" class="login-err hide"></div>
+      <button class="btn-verify" onclick="handleMfa()">Verify</button>
+      <button class="btn-back-text" onclick="showLoginForm()">Back to login</button>
+    </div>
+  </div>
+  <button class="btn-dash-link" onclick="showScreen('dashboard')">Manager Dashboard &rarr;</button>
+</div>
+
+<div id="screen-schedule" class="screen hide">
+  <div class="sched-header">
+    <div class="sched-title">Tuesday 7 Apr</div>
+    <div class="sched-sub">4 visits scheduled</div>
+  </div>
+  <div class="sched-list" id="visit-list"></div>
+  <div class="sched-footer">
+    <button class="btn-emergency" onclick="showEmergencyModal()">&#9888; I can't make it</button>
+    <button class="btn-signout" onclick="showScreen('login')">Sign out</button>
+  </div>
+</div>
+
+<div id="screen-visit" class="screen hide">
+  <div class="card visit-header-card">
+    <div style="display:flex;align-items:center">
+      <button class="btn-back" onclick="showScreen('schedule')">&#8592;</button>
+      <img id="visit-patient-pic" class="patient-pic hide" src="" alt="Patient Picture">
+      <div class="visit-patient" id="visit-patient-name"></div>
+    </div>
+    <span class="nfc-verified hide" id="nfc-badge-top">NFC verified</span>
+  </div>
+
+  <div class="card info-card hide" id="checkin-info"></div>
+  <div class="card prev-notes-card hide" id="prev-notes-box"></div>
+
+  <div id="checkin-container" class="card action-card">
+    <button id="btn-nfc-checkin" class="btn-nfc" onclick="handleCheckInScan()">Scan NFC to check in</button>
+  </div>
+
+  <div class="card">
+    <div class="tasks-title">Care tasks</div>
+    <div id="task-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="tasks-title" style="margin-bottom:10px">Visit notes</div>
+    <textarea id="visit-notes" class="notes-area" placeholder="Type any observations or additional notes here..."></textarea>
+  </div>
+
+  <div class="card action-card">
+    <button id="btn-nfc-checkout" class="btn-complete hide" onclick="handleCheckOutScan()">Scan NFC to complete</button>
+    <div class="btn-grid">
+      <button class="btn-voice">&#127908; Voice note</button>
+      <button class="btn-flag" id="btn-flag" onclick="toggleFlag()">&#9873; Flag concern</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal" class="modal-overlay hide">
+  <div class="modal-card">
+    <div class="modal-icon">&#10003;</div>
+    <div class="modal-title">Visit completed</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <button class="btn-modal" onclick="hideModal();showScreen('schedule')">Back to schedule</button>
+  </div>
+</div>
+
+<div id="screen-dashboard" class="screen hide" style="background:#F1F5F9;">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">Home First Manager Dashboard</div>
+      <div class="dash-date">Tuesday 7 April 2026 | <span id="dash-time"></span></div>
+    </div>
+    <button class="btn-carer" onclick="showScreen('login')">Carer app</button>
+  </div>
+  <div class="dash-body" id="dash-content"></div>
+</div>
+
+<script>
+var visits = [
+  {id:1,time:"08:00",name:"Mrs. Johnson",address:"12 Oak Lane, ST1 3HT",tasks:["Breakfast prepared","Medication given","Personal care","Mobility support"],status:"completed",nfc:true,checkin:"08:02",notes:"All tasks completed. Good spirits today.",prevNotes:"Slight difficulty with mobility on stairs. Prefers tea with one sugar. Daughter visiting Thursday.",prevDate:"01 Apr",prevCarer:"Aisha R."},
+  {id:2,time:"09:30",name:"Mr. Gerald",address:"5 Pine St, ST2 0BE",tasks:["Breakfast prepared","Medication given","Personal care","Mobility support","Home environment check"],status:"current",nfc:false,checkin:null,notes:"",prevNotes:"Medication box in kitchen top drawer. Needs reminder to take morning tablets. Was in good spirits. Mentioned knee pain — may need GP referral.",prevDate:"31 Mar",prevCarer:"Roberta S.", pic:"https://via.placeholder.com/150/E3F2FD/1B4965?text=Gerald"},
+  {id:3,time:"11:00",name:"Mrs. Mark",address:"8 Elm Road, ST3 2JL",tasks:["Medication given","Lunch prepared","Personal care","Companionship"],status:"upcoming",nfc:false,checkin:null,notes:"",prevNotes:"Enjoyed talking about her grandchildren. Ate well. No concerns.",prevDate:"02 Apr",prevCarer:"James M."},
+  {id:4,time:"13:00",name:"Mr. Williams",address:"22 High St, ST4 8RR",tasks:["Medication given","Lunch prepared","Mobility support","Home environment check"],status:"upcoming",nfc:false,checkin:null,notes:"",prevNotes:null,prevDate:null,prevCarer:null}
+];
+
+var currentVisit = null;
+var emergencyTriggered = false;
+var emergencyReason = '';
+var emergencyReplacement = '';
+var emergencyETA = 0;
+var taskStates = [];
+var nfcDone = false;
+var checkedIn = false;
+var checkinTime = null;
+var flagged = false;
+
+function timeNow(){return new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.add('hide')});
+  document.getElementById('screen-'+id).classList.remove('hide');
+  if(id==='schedule') renderSchedule();
+  if(id==='dashboard'){ document.getElementById('dash-time').textContent=timeNow(); renderDashboard(); }
+  if(id==='login'){document.getElementById('login-form').classList.remove('hide');document.getElementById('mfa-form').classList.add('hide');document.getElementById('staff-id').value='';document.getElementById('password').value='';document.getElementById('login-err').classList.add('hide')}
+}
+
+function handleLogin(){
+  var sid=document.getElementById('staff-id').value;
+  var pw=document.getElementById('password').value;
+  if(!sid||!pw){document.getElementById('login-err').textContent='Please enter Staff ID and password';document.getElementById('login-err').classList.remove('hide');return}
+  document.getElementById('login-err').classList.add('hide');
+  document.getElementById('login-form').classList.add('hide');
+  document.getElementById('mfa-form').classList.remove('hide');
+  document.getElementById('mfa-code').value='';
+  document.getElementById('mfa-code').focus();
+}
+
+function handleMfa(){
+  var code=document.getElementById('mfa-code').value;
+  if(code.length<3){document.getElementById('mfa-err').textContent='Enter the code from your phone';document.getElementById('mfa-err').classList.remove('hide');return}
+  showScreen('schedule');
+}
+
+function showLoginForm(){
+  document.getElementById('login-form').classList.remove('hide');
+  document.getElementById('mfa-form').classList.add('hide');
+  document.getElementById('mfa-err').classList.add('hide');
+}
+
+function renderSchedule(){
+  var html='';
+  visits.forEach(function(v){
+    var cls=v.status==='completed'?'completed':v.status==='current'?'current':v.status==='reassigned'?'reassigned':'';
+    var timeClass=v.status==='completed'?'completed':v.status==='current'?'current':v.status==='reassigned'?'reassigned':'';
+    var timeSuffix=v.status==='completed'?' \u2013 Completed':v.status==='current'?' \u2013 Current':v.status==='reassigned'?' \u2013 Reassigned':'';
+    html+='<button class="visit-card '+cls+'" onclick="openVisit('+v.id+')">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+    html+='<div><span class="visit-time '+timeClass+'">'+v.time+timeSuffix+'</span>';
+    html+='<div class="visit-name">'+v.name+'</div>';
+    html+='<div class="visit-addr">'+v.address+'</div></div>';
+    if(v.status==='completed'&&v.nfc) html+='<span class="nfc-badge">NFC verified</span>';
+    if(v.status==='reassigned') html+='<span class="reassigned-badge">Reassigned</span>';
+    html+='</div>';
+    if(v.status==='current' && v.status!=='reassigned') html+='<div class="nav-btn">Navigate &rarr;</div>';
+    html+='</button>';
+  });
+  document.getElementById('visit-list').innerHTML=html;
+}
+
+function openVisit(id){
+  currentVisit=visits.find(function(v){return v.id===id});
+  if(!currentVisit)return;
+  if(currentVisit.status==='reassigned'){return;}
+  nfcDone=currentVisit.nfc;
+  checkedIn=!!currentVisit.checkin;
+  checkinTime=currentVisit.checkin;
+  flagged=false;
+  
+  // Tasks are only marked done if the entire visit is marked completed
+  taskStates=currentVisit.tasks.map(function(t,i){
+    return{text:t, done:currentVisit.status==='completed'};
+  });
+  
+  renderVisit();
+  showScreen('visit');
+}
+
+function renderVisit(){
+  var parts=currentVisit.name.split('. ');
+  document.getElementById('visit-patient-name').innerHTML=parts[0]+'.<br>'+parts[1];
+  
+  var picEl = document.getElementById('visit-patient-pic');
+  if(currentVisit.pic) {
+    picEl.src = currentVisit.pic;
+    picEl.classList.remove('hide');
+  } else {
+    picEl.classList.add('hide');
+  }
+
+  var nfcBadge=document.getElementById('nfc-badge-top');
+  if(nfcDone){nfcBadge.classList.remove('hide')}else{nfcBadge.classList.add('hide')}
+  
+  var ci=document.getElementById('checkin-info');
+  var pnBox=document.getElementById('prev-notes-box');
+  
+  if(currentVisit.prevNotes){
+    pnBox.innerHTML='<div class="prev-notes-title">&#128203; Notes from last visit</div><div class="prev-notes-text">'+currentVisit.prevNotes+'</div><div class="prev-notes-meta">'+currentVisit.prevDate+' \u2014 '+currentVisit.prevCarer+'</div>';
+    pnBox.classList.remove('hide');
+  }else{
+    pnBox.innerHTML='';
+    pnBox.classList.add('hide');
+  }
+  
+  if(checkedIn){
+    ci.innerHTML='&#10003; Checked in: '+checkinTime+' | NFC tag matched';
+    ci.classList.remove('hide');
+  }else{
+    ci.classList.add('hide');
+  }
+
+  var checkinContainer = document.getElementById('checkin-container');
+  var btnCheckout = document.getElementById('btn-nfc-checkout');
+
+  // Control check-in visibility
+  if(checkedIn) {
+    checkinContainer.classList.add('hide');
+  } else {
+    checkinContainer.classList.remove('hide');
+    var btnCheckin = document.getElementById('btn-nfc-checkin');
+    btnCheckin.textContent = 'Scan NFC to check in';
+    btnCheckin.className = 'btn-nfc';
+  }
+
+  // Render tasks with disabled styling if not checked in
+  var html='';
+  taskStates.forEach(function(t,i){
+    var disabledClass = !checkedIn ? ' disabled' : '';
+    html+='<button class="task-row" onclick="toggleTask('+i+')">';
+    html+='<div class="task-check'+(t.done?' done':'')+disabledClass+'">'+( t.done?'&#10003;':'')+'</div>';
+    html+='<span class="task-text'+disabledClass+'">'+t.text+'</span>';
+    html+='</button>';
+  });
+  document.getElementById('task-list').innerHTML=html;
+  document.getElementById('visit-notes').value=currentVisit.notes;
+
+  var allDone = taskStates.every(function(t){return t.done});
+
+  // Control Check Out / Complete Button visibility & status
+  if(checkedIn) {
+    btnCheckout.classList.remove('hide');
+    if(allDone) {
+      btnCheckout.className = 'btn-complete';
+      btnCheckout.textContent = 'Scan NFC to complete';
+    } else {
+      btnCheckout.className = 'btn-complete btn-disabled';
+      btnCheckout.textContent = 'Complete tasks to finish';
+    }
+  } else {
+    btnCheckout.classList.add('hide');
+  }
+
+  var bf=document.getElementById('btn-flag');
+  if(flagged){bf.className='btn-flag active';bf.innerHTML='&#9888; Alert sent'}
+  else{bf.className='btn-flag';bf.innerHTML='&#9873; Flag concern'}
+}
+
+function toggleTask(i){
+  // Prevent ticking if not checked in via NFC
+  if(!checkedIn) return; 
+  
+  taskStates[i].done=!taskStates[i].done;
+  renderVisit();
+}
+
+function toggleFlag(){flagged=!flagged;renderVisit()}
+
+function handleCheckInScan(){
+  var btn=document.getElementById('btn-nfc-checkin');
+  btn.textContent='\u23F3 Scanning NFC tag...';
+  btn.className='btn-nfc btn-scanning';
+  setTimeout(function(){
+    nfcDone=true;
+    checkedIn=true;
+    checkinTime=timeNow();
+    renderVisit();
+  }, 1500);
+}
+
+function handleCheckOutScan(){
+  var btn=document.getElementById('btn-nfc-checkout');
+  btn.textContent='\u23F3 Scanning NFC tag...';
+  btn.className='btn-complete btn-scanning';
+  setTimeout(function(){
+    
+    // UPDATE STATUS ARRAY LOGIC HERE
+    var currentIndex = visits.findIndex(function(v){return v.id === currentVisit.id});
+    if(currentIndex > -1) {
+      // 1. Mark current as completed
+      visits[currentIndex].status = 'completed';
+      visits[currentIndex].nfc = true; 
+      
+      // 2. Find next upcoming and mark as current
+      for(var i = currentIndex + 1; i < visits.length; i++) {
+        if(visits[i].status === 'upcoming') {
+           visits[i].status = 'current';
+           break;
+        }
+      }
+    }
+
+    showModal();
+  }, 1500);
+}
+
+function showModal(){
+  var done=taskStates.filter(function(t){return t.done}).length;
+  document.getElementById('modal-sub').innerHTML=currentVisit.name+'<br>'+done+'/'+taskStates.length+' tasks &bull; NFC verified &bull; Data synced';
+  document.getElementById('modal').classList.remove('hide');
+}
+function hideModal(){document.getElementById('modal').classList.add('hide')}
+
+document.getElementById('mfa-code').addEventListener('input',function(e){
+  this.value=this.value.replace(/\D/g,'').slice(0,6);
+});
+
+function showEmergencyModal(){
+  document.getElementById('emergency-modal').classList.remove('hide');
+}
+function closeEmergency(){
+  document.getElementById('emergency-modal').classList.add('hide');
+}
+function triggerEmergency(reason){
+  document.getElementById('emergency-modal').classList.add('hide');
+  var nextVisit = visits.find(function(v){return v.status==='current'}) || visits.find(function(v){return v.status==='upcoming'});
+  if(!nextVisit) nextVisit = visits[1];
+  
+  setTimeout(function(){
+    var replacement = 'David L.';
+    var eta = 8;
+    document.getElementById('emergency-msg').innerHTML = 
+      '<strong>' + nextVisit.name + '</strong> has been reassigned to <strong>' + replacement + '</strong>.<br><br>' +
+      'ETA: ' + eta + ' minutes.<br>' +
+      nextVisit.name + ' will receive an automated phone call.<br><br>' +
+      '<span style="color:#64748B">Reason logged: ' + reason + '</span>';
+    nextVisit.status='reassigned';
+    emergencyTriggered=true;
+    emergencyReason=reason;
+    emergencyReplacement=replacement;
+    emergencyETA=eta;
+    document.getElementById('emergency-confirm').classList.remove('hide');
+  }, 2000);
+}
+function closeEmergencyConfirm(){
+  document.getElementById('emergency-confirm').classList.add('hide');
+  renderSchedule();
+}
+
+function renderDashboard(){
+  var alertsCount = emergencyTriggered ? 4 : 3;
+  var alertsSub = emergencyTriggered ? '1 rerouted, 1 late, 1 flagged' : '2 late, 1 flagged';
+  var carersActive = emergencyTriggered ? '25 / 28' : '26 / 28';
+  var carersSub = emergencyTriggered ? '2 on leave, 1 incident' : '2 on leave';
+
+  var kpiHtml = '<div class="kpi-grid">';
+  kpiHtml += '<div class="card kpi-card" style="margin-bottom:0"><div class="kpi-label">Visits today</div><div class="kpi-val">47 <span style="font-size:14px;color:#94A3B8">/ 52</span></div><div class="kpi-sub" style="color:#2D6A4F">90% complete</div></div>';
+  kpiHtml += '<div class="card kpi-card" style="margin-bottom:0"><div class="kpi-label">Carers active</div><div class="kpi-val">'+carersActive+'</div><div class="kpi-sub" style="color:'+(emergencyTriggered?'#E07A5F':'#5FA8D3')+'">'+carersSub+'</div></div>';
+  kpiHtml += '<div class="card kpi-card" style="margin-bottom:0"><div class="kpi-label">Missed visits</div><div class="kpi-val">1</div><div class="kpi-sub" style="color:#E07A5F">Mrs. Patel reassigned</div></div>';
+  kpiHtml += '<div class="card kpi-card" style="margin-bottom:0"><div class="kpi-label">Alerts</div><div class="kpi-val">'+alertsCount+'</div><div class="kpi-sub" style="color:#E07A5F">'+alertsSub+'</div></div>';
+  kpiHtml += '</div>';
+
+  var alertsHtml = '<div class="card panel"><div class="panel-title">Live alerts</div>';
+  if(emergencyTriggered){
+    alertsHtml += '<div class="alert-item" style="border-left:4px solid #7B1FA2;background:#F3E5F5"><div class="alert-head" style="color:#7B1FA2">'+timeNow()+' AI auto-rerouted</div><div class="alert-msg">Roberta S. reported: '+emergencyReason+'. Mr. Gerald auto-reassigned to David L. (ETA '+emergencyETA+' min). Gerald notified by phone. <strong>No action required.</strong></div></div>';
+    alertsHtml += '<div class="alert-item" style="border-left:4px solid #E07A5F;background:#FDECEA"><div class="alert-head" style="color:#B71C1C">'+timeNow()+' Carer incident</div><div class="alert-msg">Roberta S. &mdash; '+emergencyReason+' reported. All remaining visits need manual review.</div></div>';
+  } else {
+    alertsHtml += '<div class="alert-item" style="border-left:4px solid #E07A5F;background:#FDECEA"><div class="alert-head" style="color:#B71C1C">14:28 Late arrival</div><div class="alert-msg">Roberta S. &rarr; Mr. Gerald &mdash; Running 12 min late, patient notified</div></div>';
+  }
+  alertsHtml += '<div class="alert-item" style="border-left:4px solid #F9A825;background:#FFF8E1"><div class="alert-head" style="color:#E65100">14:15 Carer flag</div><div class="alert-msg">James M. &rarr; Mrs. Mark &mdash; Noted fall, requested physio referral</div></div>';
+  alertsHtml += '<div class="alert-item" style="border-left:4px solid #2D6A4F;background:#E8F5E9"><div class="alert-head" style="color:#155724">13:50 Visit completed</div><div class="alert-msg">Aisha R. &rarr; Mr. Ahmed &mdash; All tasks completed, NFC verified</div></div>';
+  alertsHtml += '<div class="alert-item" style="border-left:4px solid #5FA8D3;background:#E3F2FD"><div class="alert-head" style="color:#0D47A1">13:42 En route</div><div class="alert-msg">David L. &rarr; Mrs. Johnson &mdash; ETA 8 min, patient notified</div></div>';
+  alertsHtml += '</div>';
+
+  var staffHtml = '<div class="card panel"><div class="panel-title">Staff performance this week</div>';
+  staffHtml += '<table><thead><tr><th>Carer</th><th>Visits</th><th>On time</th><th>NFC %</th><th>Status</th></tr></thead><tbody>';
+  staffHtml += '<tr><td style="font-weight:700;color:#1E293B">Aisha R.</td><td>24</td><td>96%</td><td>100%</td><td><span class="st-badge" style="background:#D4EDDA;color:#155724">Active</span></td></tr>';
+  staffHtml += '<tr><td style="font-weight:700;color:#1E293B">James M.</td><td>22</td><td>91%</td><td>95%</td><td><span class="st-badge" style="background:#D4EDDA;color:#155724">Active</span></td></tr>';
+  if(emergencyTriggered){
+    staffHtml += '<tr style="background:#FFF5F5"><td style="font-weight:700;color:#B71C1C">Roberta S.</td><td>20</td><td>85%</td><td>90%</td><td><span class="st-badge" style="background:#F8D7DA;color:#721C24">Incident</span></td></tr>';
+    staffHtml += '<tr style="background:#FAF5FB"><td style="font-weight:700;color:#7B1FA2">David L.</td><td>18</td><td>89%</td><td>100%</td><td><span class="st-badge" style="background:#F3E5F5;color:#7B1FA2">Rerouted</span></td></tr>';
+  } else {
+    staffHtml += '<tr><td style="font-weight:700;color:#1E293B">Roberta S.</td><td>20</td><td>85%</td><td>90%</td><td><span class="st-badge" style="background:#FFF3CD;color:#856404">En route</span></td></tr>';
+    staffHtml += '<tr><td style="font-weight:700;color:#1E293B">David L.</td><td>18</td><td>89%</td><td>100%</td><td><span class="st-badge" style="background:#E3F2FD;color:#1565C0">On visit</span></td></tr>';
+  }
+  staffHtml += '<tr><td style="font-weight:700;color:#1E293B">Karen T.</td><td>0</td><td>-</td><td>-</td><td><span class="st-badge" style="background:#F1F5F9;color:#64748B">Leave</span></td></tr>';
+  staffHtml += '</tbody></table></div>';
+
+  document.getElementById('dash-content').innerHTML = kpiHtml + '<div class="panels">' + alertsHtml + staffHtml + '</div>';
+}
+</script>
+
+<div id="emergency-modal" class="emergency-modal hide">
+  <div class="modal-card">
+    <div style="font-size:28px;margin-bottom:10px">&#9888;</div>
+    <div style="font-weight:800;font-size:18px;color:#1E293B;margin-bottom:16px">I cannot make it</div>
+    <button class="emergency-option" onclick="triggerEmergency('Running late')">&#128339; Running late</button>
+    <button class="emergency-option" onclick="triggerEmergency('Incident')">&#9888; Incident (breakdown, accident)</button>
+    <button class="emergency-option" onclick="triggerEmergency('Cannot attend')">&#10060; Cannot attend today</button>
+    <button style="width:100%;padding:12px;border:none;background:transparent;color:#64748B;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px" onclick="closeEmergency()">Cancel</button>
+  </div>
+</div>
+
+<div id="emergency-confirm" class="emergency-modal hide">
+  <div class="modal-card">
+    <div class="emergency-confirm">
+      <div style="font-size:28px;margin-bottom:10px;color:#155724">&#10003;</div>
+      <div style="font-weight:800;font-size:16px;color:#155724;margin-bottom:10px">Visit reassigned</div>
+      <div style="font-size:13px;color:#155724;line-height:1.4" id="emergency-msg"></div>
+    </div>
+    <div style="font-size:13px;color:#64748B;margin-top:14px;font-weight:500">Take care of yourself. Update your status when able.</div>
+    <button style="width:100%;padding:14px;border:none;background:#1B4965;color:#fff;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px" onclick="closeEmergencyConfirm()">OK</button>
+  </div>
+</div>
+</body>
+</html>
